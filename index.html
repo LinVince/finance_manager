@@ -54,7 +54,6 @@
   <dialog id="expenseDialog">
     <form method="dialog" id="expenseForm">
       <div class="dialog-top"><div><p class="eyebrow">NEW ENTRY</p><h2>Add expense</h2></div><button class="close-button" type="button" id="closeExpense" aria-label="Close">×</button></div>
-      <button class="voice-button" type="button" id="voiceInput" aria-label="Fill expense form using voice"><span aria-hidden="true">●</span> Fill with voice</button>
       <p class="voice-status" id="voiceStatus" role="status" aria-live="polite"></p>
       <label>What was it for?<input id="expenseName" name="name" type="text" placeholder="e.g. Coffee with Sam" required autocomplete="off"></label>
       <div class="field-row"><label>Amount<input id="expenseAmount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="0.00" required></label><label>Date<input id="expenseDate" name="date" type="date" required></label></div>
@@ -64,6 +63,7 @@
       <p class="privacy-note">Stored only on this iPhone. No account or API required.</p>
     </form>
   </dialog>
+  <button class="voice-button" type="button" id="voiceInput" aria-label="Fill expense form using voice" title="Fill expense form using voice"><span aria-hidden="true">🎙</span></button>
   <div class="toast" id="toast" role="status"></div>
   <script src="app.js"></script>
 </body>

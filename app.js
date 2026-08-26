@@ -77,11 +77,11 @@ function setupVoiceInput() {
   const button = $('voiceInput');
   if (!SpeechRecognition) { button.disabled = true; $('voiceStatus').textContent = 'Voice input is not supported in this browser.'; return; }
   const recognition = new SpeechRecognition(); recognition.lang = 'en-US'; recognition.interimResults = false; recognition.maxAlternatives = 1;
-  recognition.onstart = () => { button.classList.add('listening'); button.innerHTML = '<span aria-hidden="true">●</span> Listening...'; $('voiceStatus').textContent = 'Say an expense, for example: “Coffee 5 dollars today.”'; };
+  recognition.onstart = () => { button.classList.add('listening'); button.innerHTML = '<span aria-hidden="true">🎙</span>'; button.setAttribute('aria-label', 'Listening for expense'); $('voiceStatus').textContent = 'Say an expense, for example: “Coffee 5 dollars today.”'; };
   recognition.onresult = event => { const transcript = event.results[0][0].transcript; const parsed = parseVoiceExpense(transcript); $('expenseName').value = parsed.name; if (parsed.amount !== null) $('expenseAmount').value = parsed.amount.toFixed(2); $('expenseDate').value = parsed.date.toISOString().slice(0, 10); $('expenseCategory').value = categories[parsed.category] ? parsed.category : 'auto'; $('voiceStatus').textContent = `Heard: “${transcript}”`; };
   recognition.onerror = event => { $('voiceStatus').textContent = event.error === 'not-allowed' ? 'Microphone permission was blocked.' : 'Could not hear that. Please try again.'; };
-  recognition.onend = () => { button.classList.remove('listening'); button.innerHTML = '<span aria-hidden="true">●</span> Fill with voice'; };
-  button.onclick = () => { try { recognition.start(); } catch { recognition.stop(); } };
+  recognition.onend = () => { button.classList.remove('listening'); button.innerHTML = '<span aria-hidden="true">🎙</span>'; button.setAttribute('aria-label', 'Fill expense form using voice'); };
+  button.onclick = () => { if (!$('expenseDialog').open) { $('expenseForm').reset(); $('expenseDate').value = new Date().toISOString().slice(0, 10); $('expenseDialog').showModal(); } try { recognition.start(); } catch { recognition.stop(); } };
 }
 
 $('addExpense').onclick = () => { editingExpenseId = null; $('expenseForm').reset(); $('expenseDate').value = new Date().toISOString().slice(0, 10); $('expenseDialog').showModal(); };
