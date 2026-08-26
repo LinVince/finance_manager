@@ -39,12 +39,14 @@ function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, char => ({
 function showToast(message) { $('toast').textContent = message; $('toast').classList.add('show'); setTimeout(() => $('toast').classList.remove('show'), 2400); }
 async function removeExpense(id) { const expense = expenses.find(item => item.id === id); if (!expense || !confirm(`Delete “${expense.name}”?`)) return; try { await deleteExpense(id); expenses = expenses.filter(item => item.id !== id); render(); showToast('Expense deleted and backup updated'); } catch { showToast('Unable to delete this expense'); } }
 function parseVoiceExpense(transcript) {
+  const numberWords = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, twenty: 20, thirty: 30, forty: 40, fifty: 50, hundred: 100 };
   const amountMatch = transcript.match(/(?:\$|usd\s*)?(\d+(?:\.\d{1,2})?)\s*(?:dollars?|bucks?)?/i);
-  const amount = amountMatch ? Number(amountMatch[1]) : null;
+  const wordAmountMatch = transcript.toLowerCase().match(new RegExp(`\\b(${Object.keys(numberWords).join('|')})\\s+(?:dollars?|bucks?)\\b`));
+  const amount = amountMatch ? Number(amountMatch[1]) : wordAmountMatch ? numberWords[wordAmountMatch[1]] : null;
   const lower = transcript.toLowerCase();
   const date = lower.includes('yesterday') ? new Date(Date.now() - 86400000) : new Date();
   const category = Object.keys(categories).find(item => lower.includes(item.toLowerCase())) || detectCategory(transcript);
-  let name = transcript.replace(/(?:\$|usd\s*)?\d+(?:\.\d{1,2})?\s*(?:dollars?|bucks?)?/i, '').replace(/\b(today|yesterday|for|expense|spent|on)\b/gi, '').trim();
+  let name = transcript.replace(/(?:\$|usd\s*)?\d+(?:\.\d{1,2})?\s*(?:dollars?|bucks?)?/i, '').replace(new RegExp(`\\b(?:${Object.keys(numberWords).join('|')})\\s+(?:dollars?|bucks?)\\b`, 'i'), '').replace(/\b(i|today|yesterday|for|expense|spent|spend|paid|pay|on)\b/gi, '').trim();
   if (!name || amount === null) return { amount, name: name || transcript, date, category };
   name = name.replace(/^(at|on|for)\s+/i, '').replace(/\s+/g, ' ').trim();
   return { amount, name, date, category };
