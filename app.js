@@ -38,15 +38,33 @@ function render() {
 function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char])); }
 function showToast(message) { $('toast').textContent = message; $('toast').classList.add('show'); setTimeout(() => $('toast').classList.remove('show'), 2400); }
 async function removeExpense(id) { const expense = expenses.find(item => item.id === id); if (!expense || !confirm(`Delete “${expense.name}”?`)) return; try { await deleteExpense(id); expenses = expenses.filter(item => item.id !== id); render(); showToast('Expense deleted and backup updated'); } catch { showToast('Unable to delete this expense'); } }
+function parseVoiceDate(transcript) {
+  const lower = transcript.toLowerCase();
+  const baseDate = new Date();
+  if (lower.includes('yesterday')) return new Date(Date.now() - 86400000);
+  if (lower.includes('today')) return baseDate;
+  const dateText = transcript.match(/(?:date\s+)?(\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?|(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2}(?:,?\s+\d{4})?|\d{1,2}\s+(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)(?:\s+\d{4})?)/i);
+  if (!dateText) return baseDate;
+  const parsed = new Date(dateText[1]);
+  if (!Number.isNaN(parsed.getTime())) {
+    if (!/\d{4}/.test(dateText[1])) parsed.setFullYear(baseDate.getFullYear());
+    return parsed;
+  }
+  const numeric = dateText[1].split(/[/-]/).map(Number);
+  const year = numeric[2] || baseDate.getFullYear();
+  const normalizedYear = year < 100 ? 2000 + year : year;
+  const numericDate = new Date(normalizedYear, numeric[0] - 1, numeric[1]);
+  return Number.isNaN(numericDate.getTime()) ? baseDate : numericDate;
+}
 function parseVoiceExpense(transcript) {
   const numberWords = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, twenty: 20, thirty: 30, forty: 40, fifty: 50, hundred: 100 };
   const amountMatch = transcript.match(/(?:\$|usd\s*)?(\d+(?:\.\d{1,2})?)\s*(?:dollars?|bucks?)?/i);
   const wordAmountMatch = transcript.toLowerCase().match(new RegExp(`\\b(${Object.keys(numberWords).join('|')})\\s+(?:dollars?|bucks?)\\b`));
   const amount = amountMatch ? Number(amountMatch[1]) : wordAmountMatch ? numberWords[wordAmountMatch[1]] : null;
   const lower = transcript.toLowerCase();
-  const date = lower.includes('yesterday') ? new Date(Date.now() - 86400000) : new Date();
+  const date = parseVoiceDate(transcript);
   const category = Object.keys(categories).find(item => lower.includes(item.toLowerCase())) || detectCategory(transcript);
-  let name = transcript.replace(/(?:\$|usd\s*)?\d+(?:\.\d{1,2})?\s*(?:dollars?|bucks?)?/i, '').replace(new RegExp(`\\b(?:${Object.keys(numberWords).join('|')})\\s+(?:dollars?|bucks?)\\b`, 'i'), '').replace(/\b(i|today|yesterday|for|expense|spent|spend|paid|pay|on)\b/gi, '').trim();
+  let name = transcript.replace(/\b(?:i\s+)?buy\s+/i, '').replace(/\b(?:price|cost|amount)\s*/i, '').replace(/\bdate\s+.*/i, '').replace(/(?:\$|usd\s*)?\d+(?:\.\d{1,2})?\s*(?:dollars?|bucks?)?/i, '').replace(new RegExp(`\\b(?:${Object.keys(numberWords).join('|')})\\s+(?:dollars?|bucks?)\\b`, 'i'), '').replace(/\b(i|today|yesterday|for|expense|spent|spend|paid|pay|on|price|date)\b/gi, '').trim();
   if (!name || amount === null) return { amount, name: name || transcript, date, category };
   name = name.replace(/^(at|on|for)\s+/i, '').replace(/\s+/g, ' ').trim();
   return { amount, name, date, category };
