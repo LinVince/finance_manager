@@ -38,6 +38,28 @@ function render() {
 function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char])); }
 function showToast(message) { $('toast').textContent = message; $('toast').classList.add('show'); setTimeout(() => $('toast').classList.remove('show'), 2400); }
 async function removeExpense(id) { const expense = expenses.find(item => item.id === id); if (!expense || !confirm(`Delete “${expense.name}”?`)) return; try { await deleteExpense(id); expenses = expenses.filter(item => item.id !== id); render(); showToast('Expense deleted and backup updated'); } catch { showToast('Unable to delete this expense'); } }
+function parseVoiceExpense(transcript) {
+  const amountMatch = transcript.match(/(?:\$|usd\s*)?(\d+(?:\.\d{1,2})?)\s*(?:dollars?|bucks?)?/i);
+  const amount = amountMatch ? Number(amountMatch[1]) : null;
+  const lower = transcript.toLowerCase();
+  const date = lower.includes('yesterday') ? new Date(Date.now() - 86400000) : new Date();
+  const category = Object.keys(categories).find(item => lower.includes(item.toLowerCase())) || detectCategory(transcript);
+  let name = transcript.replace(/(?:\$|usd\s*)?\d+(?:\.\d{1,2})?\s*(?:dollars?|bucks?)?/i, '').replace(/\b(today|yesterday|for|expense|spent|on)\b/gi, '').trim();
+  if (!name || amount === null) return { amount, name: name || transcript, date, category };
+  name = name.replace(/^(at|on|for)\s+/i, '').replace(/\s+/g, ' ').trim();
+  return { amount, name, date, category };
+}
+function setupVoiceInput() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const button = $('voiceInput');
+  if (!SpeechRecognition) { button.disabled = true; $('voiceStatus').textContent = 'Voice input is not supported in this browser.'; return; }
+  const recognition = new SpeechRecognition(); recognition.lang = 'en-US'; recognition.interimResults = false; recognition.maxAlternatives = 1;
+  recognition.onstart = () => { button.classList.add('listening'); button.innerHTML = '<span aria-hidden="true">●</span> Listening...'; $('voiceStatus').textContent = 'Say an expense, for example: “Coffee 5 dollars today.”'; };
+  recognition.onresult = event => { const transcript = event.results[0][0].transcript; const parsed = parseVoiceExpense(transcript); $('expenseName').value = parsed.name; if (parsed.amount !== null) $('expenseAmount').value = parsed.amount.toFixed(2); $('expenseDate').value = parsed.date.toISOString().slice(0, 10); $('expenseCategory').value = categories[parsed.category] ? parsed.category : 'auto'; $('voiceStatus').textContent = `Heard: “${transcript}”`; };
+  recognition.onerror = event => { $('voiceStatus').textContent = event.error === 'not-allowed' ? 'Microphone permission was blocked.' : 'Could not hear that. Please try again.'; };
+  recognition.onend = () => { button.classList.remove('listening'); button.innerHTML = '<span aria-hidden="true">●</span> Fill with voice'; };
+  button.onclick = () => { try { recognition.start(); } catch { recognition.stop(); } };
+}
 
 $('addExpense').onclick = () => { $('expenseDate').value = new Date().toISOString().slice(0, 10); $('expenseDialog').showModal(); };
 $('closeExpense').onclick = () => $('expenseDialog').close();
@@ -49,5 +71,6 @@ $('exportButton').onclick = () => { const blob = new Blob([JSON.stringify(expens
 $('importButton').onclick = () => $('importFile').click();
 $('importFile').onchange = async event => { const file = event.target.files[0]; if (!file) return; try { const imported = JSON.parse(await file.text()); if (!Array.isArray(imported) || imported.some(item => !item || !item.id || !item.name || !item.date || !categories[item.category] || !Number.isFinite(Number(item.amount)))) throw new Error('Invalid backup'); await deleteAll(); const normalized = imported.map(item => ({ ...item, id: String(item.id), name: String(item.name), amount: Number(item.amount), created: Number(item.created) || Date.now() })); for (const item of normalized) await saveExpense(item); expenses = sortExpenses(normalized); render(); showToast(`${expenses.length} expenses imported`); } catch { showToast('Invalid expense JSON file'); } event.target.value = ''; };
 $('expenseForm').onsubmit = async event => { event.preventDefault(); const form = new FormData(event.target), name = form.get('name').trim(), category = form.get('category') === 'auto' ? detectCategory(`${name} ${form.get('note')}`) : form.get('category'); const expense = { id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`, name, amount: Number(form.get('amount')), date: form.get('date'), category, note: form.get('note').trim(), created: Date.now() }; try { await saveExpense(expense); expenses = await getExpenses(); if (!expenses.some(item => item.id === expense.id)) { expenses = sortExpenses([...readLocalExpenses(), expense]); } event.target.reset(); $('expenseDialog').close(); visibleMonth = parseDate(form.get('date')); render(); showToast(`Sorted into ${category}`); } catch { showToast('Unable to save this expense'); } };
+setupVoiceInput();
 getExpenses().then(data => { expenses = data.length ? data : sortExpenses(readLocalExpenses()); render(); }).catch(() => { expenses = sortExpenses(readLocalExpenses()); render(); showToast('Using local browser storage'); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
