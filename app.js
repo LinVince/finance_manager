@@ -12,14 +12,18 @@ const categories = {
 };
 let expenses = [], visibleMonth = new Date(), showAllCategories = false;
 const $ = id => document.getElementById(id);
+const LOCAL_KEY = 'spendwell-expenses';
 const currency = value => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
 const monthKey = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 const parseDate = date => new Date(`${date}T12:00:00`);
 
-function openDb() { return new Promise((resolve, reject) => { const request = indexedDB.open(DB_NAME, 1); request.onupgradeneeded = () => request.result.createObjectStore(STORE, { keyPath: 'id' }); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); }); }
+function openDb() { return new Promise((resolve, reject) => { if (!('indexedDB' in window)) { reject(new Error('IndexedDB unavailable')); return; } const request = indexedDB.open(DB_NAME, 1); request.onupgradeneeded = () => request.result.createObjectStore(STORE, { keyPath: 'id' }); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); }); }
+function readLocalExpenses() { try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); } catch { return []; } }
+function writeLocalExpenses(items) { localStorage.setItem(LOCAL_KEY, JSON.stringify(items)); }
+function sortExpenses(items) { return items.sort((a, b) => b.date.localeCompare(a.date) || b.created - a.created); }
 async function getExpenses() { const db = await openDb(); return new Promise((resolve, reject) => { const request = db.transaction(STORE).objectStore(STORE).getAll(); request.onsuccess = () => resolve(request.result.sort((a, b) => b.date.localeCompare(a.date) || b.created - a.created)); request.onerror = () => reject(request.error); }); }
-async function saveExpense(expense) { const db = await openDb(); return new Promise((resolve, reject) => { const request = db.transaction(STORE, 'readwrite').objectStore(STORE).put(expense); request.onsuccess = resolve; request.onerror = () => reject(request.error); }); }
-async function deleteAll() { const db = await openDb(); return new Promise((resolve, reject) => { const request = db.transaction(STORE, 'readwrite').objectStore(STORE).clear(); request.onsuccess = resolve; request.onerror = () => reject(request.error); }); }
+async function saveExpense(expense) { try { const db = await openDb(); await new Promise((resolve, reject) => { const request = db.transaction(STORE, 'readwrite').objectStore(STORE).put(expense); request.onsuccess = resolve; request.onerror = () => reject(request.error); }); } catch { const items = readLocalExpenses().filter(item => item.id !== expense.id); items.push(expense); writeLocalExpenses(items); } }
+async function deleteAll() { try { const db = await openDb(); await new Promise((resolve, reject) => { const request = db.transaction(STORE, 'readwrite').objectStore(STORE).clear(); request.onsuccess = resolve; request.onerror = () => reject(request.error); }); } catch { /* local storage is the fallback */ } localStorage.removeItem(LOCAL_KEY); }
 function detectCategory(text) { const input = text.toLowerCase(); let best = 'Other', score = 0; Object.entries(categories).forEach(([category, data]) => { const matches = data.terms.split(' ').filter(term => input.includes(term)).length; if (matches > score) { best = category; score = matches; } }); return best; }
 function render() {
   const key = monthKey(visibleMonth), current = expenses.filter(item => item.date.startsWith(key));
@@ -33,11 +37,12 @@ function escapeHtml(value) { return value.replace(/[&<>'"]/g, char => ({ '&': '&
 function showToast(message) { $('toast').textContent = message; $('toast').classList.add('show'); setTimeout(() => $('toast').classList.remove('show'), 2400); }
 
 $('addExpense').onclick = () => { $('expenseDate').value = new Date().toISOString().slice(0, 10); $('expenseDialog').showModal(); };
+$('closeExpense').onclick = () => $('expenseDialog').close();
 $('previousMonth').onclick = () => { visibleMonth.setMonth(visibleMonth.getMonth() - 1); render(); };
 $('nextMonth').onclick = () => { visibleMonth.setMonth(visibleMonth.getMonth() + 1); render(); };
 $('clearAll').onclick = async () => { if (expenses.length && confirm('Delete every saved expense from this device?')) { await deleteAll(); expenses = []; render(); showToast('All expenses removed'); } };
 $('allCategories').onclick = () => { showAllCategories = !showAllCategories; $('allCategories').textContent = showAllCategories ? 'Show less' : 'View all'; render(); };
 $('exportButton').onclick = () => { const blob = new Blob([JSON.stringify(expenses, null, 2)], { type: 'application/json' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'spendwell-expenses.json'; link.click(); URL.revokeObjectURL(link.href); showToast('Expense backup downloaded'); };
-$('expenseForm').onsubmit = async event => { event.preventDefault(); const form = new FormData(event.target), name = form.get('name').trim(), category = form.get('category') === 'auto' ? detectCategory(`${name} ${form.get('note')}`) : form.get('category'); await saveExpense({ id: crypto.randomUUID(), name, amount: Number(form.get('amount')), date: form.get('date'), category, note: form.get('note').trim(), created: Date.now() }); expenses = await getExpenses(); event.target.reset(); $('expenseDialog').close(); visibleMonth = parseDate(form.get('date')); render(); showToast(`Sorted into ${category}`); };
-getExpenses().then(data => { expenses = data; render(); }).catch(() => showToast('Storage is unavailable in this browser'));
+$('expenseForm').onsubmit = async event => { event.preventDefault(); const form = new FormData(event.target), name = form.get('name').trim(), category = form.get('category') === 'auto' ? detectCategory(`${name} ${form.get('note')}`) : form.get('category'); const expense = { id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`, name, amount: Number(form.get('amount')), date: form.get('date'), category, note: form.get('note').trim(), created: Date.now() }; try { await saveExpense(expense); expenses = await getExpenses(); if (!expenses.some(item => item.id === expense.id)) { expenses = sortExpenses([...readLocalExpenses(), expense]); } event.target.reset(); $('expenseDialog').close(); visibleMonth = parseDate(form.get('date')); render(); showToast(`Sorted into ${category}`); } catch { showToast('Unable to save this expense'); } };
+getExpenses().then(data => { expenses = data.length ? data : sortExpenses(readLocalExpenses()); render(); }).catch(() => { expenses = sortExpenses(readLocalExpenses()); render(); showToast('Using local browser storage'); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
