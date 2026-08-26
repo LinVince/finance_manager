@@ -64,7 +64,8 @@ function parseVoiceExpense(transcript) {
   const lower = transcript.toLowerCase();
   const date = parseVoiceDate(transcript);
   const category = Object.keys(categories).find(item => lower.includes(item.toLowerCase())) || detectCategory(transcript);
-  let name = transcript.replace(/\b(?:i\s+)?buy\s+/i, '').replace(/\b(?:price|cost|amount)\s*/i, '').replace(/\bdate\s+.*/i, '').replace(/(?:\$|usd\s*)?\d+(?:\.\d{1,2})?\s*(?:dollars?|bucks?)?/i, '').replace(new RegExp(`\\b(?:${Object.keys(numberWords).join('|')})\\s+(?:dollars?|bucks?)\\b`, 'i'), '').replace(/\b(i|today|yesterday|for|expense|spent|spend|paid|pay|on|price|date)\b/gi, '').trim();
+  const labeledName = transcript.match(/\b(?:i\s+)?buy\s+(.+?)\s+(?:price|cost|amount)\b/i);
+  let name = labeledName ? labeledName[1].trim() : transcript.replace(/\b(?:i\s+)?buy\s+/i, '').replace(/\b(?:price|cost|amount)\s*/i, '').replace(/\bdate\s+.*/i, '').replace(/(?:\$|usd\s*)?\d+(?:\.\d{1,2})?\s*(?:dollars?|bucks?)?/i, '').replace(new RegExp(`\\b(?:${Object.keys(numberWords).join('|')})\\s+(?:dollars?|bucks?)\\b`, 'i'), '').replace(/\b(i|today|yesterday|for|expense|spent|spend|paid|pay|on|price|date)\b/gi, '').trim();
   if (!name || amount === null) return { amount, name: name || transcript, date, category };
   name = name.replace(/^(at|on|for)\s+/i, '').replace(/\s+/g, ' ').trim();
   return { amount, name, date, category };
