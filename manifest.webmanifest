@@ -1,0 +1,9 @@
+{
+  "name": "Spendwell Expense Tracker",
+  "short_name": "Spendwell",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f5f1ea",
+  "theme_color": "#222522",
+  "description": "A private, local-first expense tracker."
+}

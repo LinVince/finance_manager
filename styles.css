@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+
+:root { --ink:#222522; --muted:#7a7d75; --paper:#f5f1ea; --card:#fffdf8; --line:#e6e0d6; --coral:#e56b55; --sage:#839a7b; --gold:#d8a34f; --blue:#81a6b5; --plum:#8f7a8b; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font:15px 'DM Sans', sans-serif; -webkit-font-smoothing:antialiased; }
+button, input, select, textarea { font:inherit; }
+button { cursor:pointer; }
+.app-shell { max-width:760px; margin:0 auto; padding:30px 24px 124px; }
+.topbar { display:flex; align-items:center; gap:12px; }
+.brand-mark { width:38px; height:38px; border-radius:12px; display:grid; place-items:center; background:var(--ink); color:#f7c6a3; font:700 21px 'Playfair Display', serif; transform:rotate(-7deg); }
+.eyebrow, .muted-label { margin:0; color:var(--muted); font-size:10px; letter-spacing:1.4px; font-weight:700; }
+h1, h2 { margin:0; }
+h1 { font:700 28px 'Playfair Display', serif; letter-spacing:0; line-height:1; }
+h2 { font-size:18px; font-weight:700; }
+.icon-button, .text-button, .close-button { border:0; background:transparent; color:var(--ink); }
+.icon-button { margin-left:auto; font-size:25px; line-height:1; padding:5px 2px; }
+.month-row { display:flex; align-items:center; justify-content:space-between; margin:42px 0 18px; }
+.month-label { font-weight:600; letter-spacing:.1px; }
+.month-dot { color:var(--coral); padding:0 7px; }
+.text-button { font-size:31px; color:#a8aaa2; padding:0 8px; line-height:1; }
+.summary-panel { display:flex; align-items:center; justify-content:space-between; min-height:180px; padding:28px 30px; background:var(--ink); color:#fbf6ed; border-radius:4px; box-shadow:0 12px 25px rgba(35,38,32,.08); }
+.summary-copy { display:flex; flex-direction:column; gap:8px; }
+.summary-copy .muted-label { color:#aeb2a9; }
+.summary-copy strong { font:700 clamp(38px, 11vw, 60px) 'Playfair Display', serif; line-height:1; letter-spacing:0; }
+.comparison { color:#b7c9ab; font-size:12px; }
+.donut { width:112px; height:112px; border-radius:50%; display:grid; place-items:center; background:conic-gradient(var(--coral) 0 35%, var(--sage) 35% 65%, var(--gold) 65% 82%, var(--blue) 82% 100%); }
+.donut-hole { width:76px; height:76px; border-radius:50%; background:var(--ink); display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.donut-hole strong { font-size:22px; line-height:1; }.donut-hole span { color:#aeb2a9; font-size:9px; margin-top:5px; }
+.section-block { margin-top:38px; }.section-heading { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.quiet-button { border:0; background:none; color:var(--coral); font-size:12px; padding:5px 0; }
+.category-list { display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; }
+.category-item { padding:15px; background:var(--card); border:1px solid var(--line); border-radius:3px; }.category-meta { display:flex; align-items:center; gap:9px; }.category-dot { width:9px; height:9px; border-radius:50%; }.category-name { font-size:13px; font-weight:600; }.category-amount { margin:12px 0 9px; font-size:18px; font-weight:700; }.category-bar { height:3px; background:#ece8df; }.category-bar span { display:block; height:100%; background:var(--coral); }
+.transaction-list { display:flex; flex-direction:column; background:var(--card); border-top:1px solid var(--line); }.transaction { display:flex; align-items:center; gap:12px; padding:16px 2px; border-bottom:1px solid var(--line); }.transaction-icon { width:36px; height:36px; display:grid; place-items:center; border-radius:50%; background:#f3dfd0; font-size:15px; }.transaction-info { min-width:0; flex:1; }.transaction-name { font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }.transaction-detail { color:var(--muted); font-size:11px; margin-top:3px; }.transaction-amount { font-weight:700; }.empty-state { border:1px dashed #d7d0c5; padding:32px 20px; text-align:center; color:var(--muted); }.empty-state strong { display:block; color:var(--ink); margin-bottom:6px; }
+.add-expense { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:2; display:flex; align-items:center; gap:9px; border:0; border-radius:30px; padding:15px 22px 15px 16px; background:var(--coral); color:#fffdf8; font-weight:700; box-shadow:0 10px 25px rgba(181,76,57,.28); }.add-expense span { font-size:24px; font-weight:400; line-height:12px; }
+dialog { width:min(460px, calc(100% - 28px)); border:0; border-radius:5px; padding:0; background:var(--card); color:var(--ink); box-shadow:0 20px 80px rgba(0,0,0,.2); } dialog::backdrop { background:rgba(31,34,29,.46); } dialog form { padding:26px; }.dialog-top { display:flex; justify-content:space-between; margin-bottom:25px; }.dialog-top h2 { font:700 27px 'Playfair Display', serif; margin-top:4px; }.close-button { font-size:25px; color:var(--muted); }.dialog-top + label, label { display:block; font-weight:600; font-size:12px; margin-bottom:16px; }.optional { color:var(--muted); font-weight:400; }.field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; } input, select, textarea { width:100%; margin-top:7px; border:1px solid var(--line); border-radius:3px; padding:12px; color:var(--ink); background:#fffefa; outline-color:var(--coral); } textarea { resize:vertical; }.submit-button { width:100%; border:0; border-radius:3px; background:var(--ink); color:#fffdf8; padding:14px; font-weight:700; margin-top:4px; }.submit-button span { float:right; font-size:18px; }.privacy-note { color:var(--muted); text-align:center; font-size:10px; margin:16px 0 0; }.toast { position:fixed; bottom:84px; left:50%; transform:translate(-50%, 20px); opacity:0; padding:11px 16px; border-radius:3px; background:var(--ink); color:#fff; font-size:12px; transition:.25s ease; pointer-events:none; }.toast.show { opacity:1; transform:translate(-50%, 0); }
+@media (max-width:420px) { .app-shell { padding-left:17px; padding-right:17px; padding-top:24px; }.summary-panel { padding:23px 20px; }.donut { width:96px; height:96px; }.donut-hole { width:65px; height:65px; }.summary-copy strong { font-size:40px; } }

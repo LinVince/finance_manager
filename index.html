@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f1ea">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>Spendwell</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand-mark" aria-hidden="true">S</div>
+      <div>
+        <p class="eyebrow">PERSONAL FINANCE</p>
+        <h1>Spendwell</h1>
+      </div>
+      <button class="icon-button" id="exportButton" title="Export your expenses" aria-label="Export your expenses">↥</button>
+    </header>
+
+    <section class="month-row" aria-label="Month navigation">
+      <button class="text-button" id="previousMonth" aria-label="Previous month">‹</button>
+      <div class="month-label"><span id="monthName"></span><span class="month-dot">·</span><span id="monthCount"></span></div>
+      <button class="text-button" id="nextMonth" aria-label="Next month">›</button>
+    </section>
+
+    <section class="summary-panel">
+      <div class="summary-copy">
+        <span class="muted-label">SPENT THIS MONTH</span>
+        <strong id="totalSpent">$0.00</strong>
+        <span class="comparison" id="comparisonText">Your spending will appear here</span>
+      </div>
+      <div class="donut" id="donut" aria-label="Expense category breakdown">
+        <div class="donut-hole"><strong id="categoryCount">0</strong><span>categories</span></div>
+      </div>
+    </section>
+
+    <section class="section-block">
+      <div class="section-heading"><h2>Where it went</h2><button class="quiet-button" id="allCategories">View all</button></div>
+      <div class="category-list" id="categoryList"></div>
+    </section>
+
+    <section class="section-block transactions-section">
+      <div class="section-heading"><h2>Recent activity</h2><button class="quiet-button" id="clearAll">Clear all</button></div>
+      <div class="transaction-list" id="transactionList"></div>
+    </section>
+  </main>
+
+  <button class="add-expense" id="addExpense"><span>+</span> Add expense</button>
+
+  <dialog id="expenseDialog">
+    <form method="dialog" id="expenseForm">
+      <div class="dialog-top"><div><p class="eyebrow">NEW ENTRY</p><h2>Add expense</h2></div><button class="close-button" value="cancel" aria-label="Close">×</button></div>
+      <label>What was it for?<input id="expenseName" name="name" type="text" placeholder="e.g. Coffee with Sam" required autocomplete="off"></label>
+      <div class="field-row"><label>Amount<input id="expenseAmount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="0.00" required></label><label>Date<input id="expenseDate" name="date" type="date" required></label></div>
+      <label>Category <span class="optional">optional · smart sorted</span><select id="expenseCategory" name="category"><option value="auto">Auto-detect on device</option><option>Food & Dining</option><option>Transport</option><option>Home</option><option>Shopping</option><option>Health</option><option>Fun</option><option>Subscriptions</option><option>Other</option></select></label>
+      <label>Note <span class="optional">optional</span><textarea id="expenseNote" name="note" rows="2" placeholder="Add a little context"></textarea></label>
+      <button class="submit-button" value="default">Save expense <span>↗</span></button>
+      <p class="privacy-note">Stored only on this iPhone. No account or API required.</p>
+    </form>
+  </dialog>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
