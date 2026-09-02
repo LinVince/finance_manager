@@ -13,12 +13,64 @@ const categories = {
   Other: { color: '#9c9b91', icon: '•', terms: '' }
 };
 
-let expenses = [], visibleMonth = new Date(), showAllCategories = false, editingExpenseId = null;
+let expenses = [], visibleMonth = new Date(), showAllCategories = false, editingExpenseId = null, activeView = 'month';
 const $ = id => document.getElementById(id);
 const LOCAL_KEY = 'spendwell-expenses';
+const demoExpenses = JSON.parse($('demoData').textContent);
 const currency = value => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
 const monthKey = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 const parseDate = date => new Date(`${date}T12:00:00`);
+const monthLabel = key => parseDate(`${key}-01`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+function groupByMonth() {
+  const grouped = {};
+  expenses.map(normalizeEntry).forEach(item => {
+    const key = item.date.slice(0, 7);
+    grouped[key] ||= { expense: 0, income: 0, categories: {} };
+    if (item.type === 'expense') {
+      grouped[key].expense += item.amount;
+      grouped[key].categories[item.category] = (grouped[key].categories[item.category] || 0) + item.amount;
+    } else if (item.type === 'income') grouped[key].income += item.amount;
+  });
+  return Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([key, data]) => ({ ...data, key, saving: data.income - data.expense }));
+}
+
+function pieGradient(grouped) {
+  const sorted = Object.entries(grouped).sort((a, b) => b[1] - a[1]);
+  const total = sorted.reduce((sum, [, amount]) => sum + amount, 0);
+  if (!total) return '#d9d4ca';
+  let cursor = 0;
+  return `conic-gradient(${sorted.map(([category, amount]) => { const start = cursor; cursor += amount / total * 100; return `${(categories[category] || categories.Other).color} ${start}% ${cursor}%`; }).join(',')})`;
+}
+
+function legendMarkup(grouped) {
+  const total = Object.values(grouped).reduce((sum, amount) => sum + amount, 0);
+  return Object.entries(grouped).sort((a, b) => b[1] - a[1]).map(([category, amount]) => `<div class="legend-item"><span class="legend-dot" style="background:${(categories[category] || categories.Other).color}"></span><span>${escapeHtml(category)} ${total ? Math.round(amount / total * 100) : 0}%</span></div>`).join('');
+}
+
+function lineChartMarkup(values, color, formatter) {
+  if (!values.length) return '<div class="empty-overview"><strong>No data yet</strong>Add entries to see your trends.</div>';
+  const width = 640, height = 180, left = 10, right = 10, top = 16, bottom = 32;
+  const max = Math.max(...values.map(item => Math.abs(item.value)), 1);
+  const points = values.map((item, index) => `${left + (values.length === 1 ? (width - left - right) / 2 : index * (width - left - right) / (values.length - 1))},${top + (max - item.value) / (max * 2) * (height - top - bottom)}`);
+  return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${formatter(values[values.length - 1].value)} trend"><line x1="${left}" y1="${height / 2}" x2="${width - right}" y2="${height / 2}" stroke="#e6e0d6"/><polyline points="${points.join(' ')}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>${values.map((item, index) => { const [x, y] = points[index].split(','); return `<circle cx="${x}" cy="${y}" r="4" fill="${color}"/><text class="chart-label" x="${x}" y="${height - 10}" text-anchor="middle">${monthLabel(item.key)}</text>${index === values.length - 1 ? `<text class="chart-value" x="${x}" y="${Number(y) - 10}" text-anchor="middle">${formatter(item.value)}</text>` : ''}`; }).join('')}</svg>`;
+}
+
+function renderOverview() {
+  const months = groupByMonth();
+  const totalSaving = months.reduce((sum, item) => sum + item.saving, 0);
+  $('overviewRange').textContent = months.length ? `${monthLabel(months[0].key)} - ${monthLabel(months[months.length - 1].key)}` : 'No entries yet';
+  $('totalSaving').textContent = currency(totalSaving);
+  $('averageSaving').textContent = currency(months.length ? totalSaving / months.length : 0);
+  $('expenseChartTotal').textContent = currency(months.reduce((sum, item) => sum + item.expense, 0));
+  $('savingChartTotal').textContent = currency(totalSaving);
+  $('expenseLineChart').innerHTML = lineChartMarkup(months.map(item => ({ key: item.key, value: item.expense })), '#e56b55', currency);
+  $('savingLineChart').innerHTML = lineChartMarkup(months.map(item => ({ key: item.key, value: item.saving })), '#2c8d72', currency);
+  const allCategories = months.reduce((all, item) => Object.entries(item.categories).reduce((result, [category, amount]) => { result[category] = (result[category] || 0) + amount; return result; }, all), {});
+  $('overviewPie').style.background = pieGradient(allCategories);
+  $('overviewLegend').innerHTML = legendMarkup(allCategories) || '<span class="muted-label">NO EXPENSES</span>';
+  $('monthBreakdown').innerHTML = months.length ? months.slice().reverse().map(item => `<article class="month-chart"><h3>${monthLabel(item.key)}</h3><div class="month-chart-content"><div class="month-pie" style="background:${pieGradient(item.categories)}"></div><div class="legend">${legendMarkup(item.categories) || '<span class="muted-label">NO EXPENSES</span>'}</div></div></article>`).join('') : '<div class="empty-overview"><strong>Your overview is waiting</strong>Add your first entry to build a picture of your finances.</div>';
+}
 
 const normalizeEntry = item => {
   const entry = item || {};
@@ -56,6 +108,12 @@ function readLocalExpenses() {
 
 function writeLocalExpenses(items) {
   localStorage.setItem(LOCAL_KEY, JSON.stringify(items));
+}
+
+async function loadDemoExpenses() {
+  const normalized = demoExpenses.map(normalizeEntry);
+  for (const item of normalized) await saveExpense(item);
+  return normalized;
 }
 
 function sortExpenses(items) {
@@ -134,6 +192,13 @@ function detectCategory(text) {
 }
 
 function render() {
+  $('monthViewButton').classList.toggle('active', activeView === 'month');
+  $('overviewViewButton').classList.toggle('active', activeView === 'overview');
+  $('monthViewButton').setAttribute('aria-selected', activeView === 'month');
+  $('overviewViewButton').setAttribute('aria-selected', activeView === 'overview');
+  document.querySelectorAll('.month-view, .summary-panel, .section-block').forEach(element => { element.hidden = activeView !== 'month'; });
+  $('overviewView').hidden = activeView !== 'overview';
+  renderOverview();
   const key = monthKey(visibleMonth);
   const entries = expenses.map(normalizeEntry).filter(item => item.date.startsWith(key));
   const expenseEntries = entries.filter(item => item.type === 'expense');
@@ -367,6 +432,9 @@ $('addExpense').onclick = () => {
   $('expenseDialog').showModal();
 };
 
+$('monthViewButton').onclick = () => { activeView = 'month'; render(); };
+$('overviewViewButton').onclick = () => { activeView = 'overview'; render(); };
+
 $('closeExpense').onclick = () => $('expenseDialog').close();
 $('previousMonth').onclick = () => { visibleMonth.setMonth(visibleMonth.getMonth() - 1); render(); };
 $('nextMonth').onclick = () => { visibleMonth.setMonth(visibleMonth.getMonth() + 1); render(); };
@@ -470,8 +538,9 @@ $('expenseForm').onsubmit = async event => {
 };
 
 setupVoiceInput();
-getExpenses().then(data => {
-  expenses = data.length ? data : sortExpenses(readLocalExpenses());
+getExpenses().then(async data => {
+  const localExpenses = data.length ? data : sortExpenses(readLocalExpenses());
+  expenses = localExpenses.length ? localExpenses : await loadDemoExpenses();
   render();
 }).catch(() => {
   expenses = sortExpenses(readLocalExpenses());

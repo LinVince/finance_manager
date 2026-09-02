@@ -21,7 +21,12 @@
       <div class="topbar-actions"><button class="icon-button" id="importButton" title="Import expenses from JSON" aria-label="Import expenses from JSON">↧</button><button class="icon-button" id="exportButton" title="Export your expenses" aria-label="Export your expenses">↥</button><input id="importFile" type="file" accept="application/json" hidden></div>
     </header>
 
-    <section class="month-row" aria-label="Month navigation">
+    <nav class="view-tabs" aria-label="Views">
+      <button class="view-tab active" id="monthViewButton" type="button">Month</button>
+      <button class="view-tab" id="overviewViewButton" type="button">Overview</button>
+    </nav>
+
+    <section class="month-row month-view" aria-label="Month navigation">
       <button class="text-button" id="previousMonth" aria-label="Previous month">‹</button>
       <div class="month-label"><span id="monthName"></span><span class="month-dot">·</span><span id="monthCount"></span></div>
       <button class="text-button" id="nextMonth" aria-label="Next month">›</button>
@@ -47,7 +52,39 @@
       <div class="section-heading"><h2>Recent activity</h2><button class="quiet-button" id="clearAll">Clear all</button></div>
       <div class="transaction-list" id="transactionList"></div>
     </section>
+
+    <section class="overview-view" id="overviewView" hidden>
+      <div class="overview-heading"><div><p class="eyebrow">YOUR MONEY, OVER TIME</p><h2>Overview</h2></div><span class="overview-range" id="overviewRange"></span></div>
+      <div class="overview-stats"><div><span class="muted-label">TOTAL SAVING</span><strong id="totalSaving">$0.00</strong></div><div><span class="muted-label">AVERAGE / MONTH</span><strong id="averageSaving">$0.00</strong></div></div>
+      <div class="overview-grid">
+        <article class="chart-panel chart-wide"><div class="chart-heading"><h3>Expenses by month</h3><span id="expenseChartTotal"></span></div><div class="chart" id="expenseLineChart"></div></article>
+        <article class="chart-panel chart-wide"><div class="chart-heading"><h3>Saving each month</h3><span id="savingChartTotal"></span></div><div class="chart" id="savingLineChart"></div></article>
+        <article class="chart-panel"><div class="chart-heading"><h3>All expense categories</h3></div><div class="pie-layout"><div class="pie-chart" id="overviewPie"></div><div class="legend" id="overviewLegend"></div></div></article>
+      </div>
+      <div class="section-heading month-breakdown-heading"><h2>Categories by month</h2><span class="muted-label">EXPENSES ONLY</span></div>
+      <div class="month-breakdown" id="monthBreakdown"></div>
+    </section>
   </main>
+
+  <script id="demoData" type="application/json">
+    [
+      {"id":"demo-jun-rent","name":"Rent","amount":1450,"date":"2026-06-03","type":"expense","category":"Home","note":"","created":1},
+      {"id":"demo-jun-groceries","name":"Groceries","amount":268.42,"date":"2026-06-08","type":"expense","category":"Food & Dining","note":"","created":2},
+      {"id":"demo-jun-transit","name":"Transit pass","amount":96,"date":"2026-06-12","type":"expense","category":"Transport","note":"","created":3},
+      {"id":"demo-jun-streaming","name":"Streaming services","amount":42.97,"date":"2026-06-18","type":"expense","category":"Subscriptions","note":"","created":4},
+      {"id":"demo-jul-rent","name":"Rent","amount":1450,"date":"2026-07-03","type":"expense","category":"Home","note":"","created":5},
+      {"id":"demo-jul-dining","name":"Dinner out","amount":184.6,"date":"2026-07-09","type":"expense","category":"Food & Dining","note":"","created":6},
+      {"id":"demo-jul-shopping","name":"Summer clothes","amount":129.99,"date":"2026-07-15","type":"expense","category":"Shopping","note":"","created":7},
+      {"id":"demo-jul-fun","name":"Concert tickets","amount":88,"date":"2026-07-24","type":"expense","category":"Fun","note":"","created":8},
+      {"id":"demo-aug-rent","name":"Rent","amount":1450,"date":"2026-08-03","type":"expense","category":"Home","note":"","created":9},
+      {"id":"demo-aug-groceries","name":"Weekly groceries","amount":312.15,"date":"2026-08-07","type":"expense","category":"Food & Dining","note":"","created":10},
+      {"id":"demo-aug-health","name":"Pharmacy","amount":64.8,"date":"2026-08-13","type":"expense","category":"Health","note":"","created":11},
+      {"id":"demo-aug-coffee","name":"Coffee runs","amount":57.5,"date":"2026-08-21","type":"expense","category":"Food & Dining","note":"","created":12},
+      {"id":"demo-sep-rent","name":"Rent","amount":1450,"date":"2026-09-01","type":"expense","category":"Home","note":"","created":13},
+      {"id":"demo-sep-groceries","name":"Groceries","amount":226.3,"date":"2026-09-02","type":"expense","category":"Food & Dining","note":"","created":14},
+      {"id":"demo-sep-phone","name":"Phone plan","amount":58,"date":"2026-09-02","type":"expense","category":"Subscriptions","note":"","created":15}
+    ]
+  </script>
 
   <button class="add-expense" id="addExpense"><span>+</span> Add</button>
 
