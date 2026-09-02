@@ -16,7 +16,6 @@ const categories = {
 let expenses = [], visibleMonth = new Date(), showAllCategories = false, editingExpenseId = null, activeView = 'month';
 const $ = id => document.getElementById(id);
 const LOCAL_KEY = 'spendwell-expenses';
-const demoExpenses = JSON.parse($('demoData').textContent);
 const currency = value => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
 const monthKey = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 const parseDate = date => new Date(`${date}T12:00:00`);
@@ -108,12 +107,6 @@ function readLocalExpenses() {
 
 function writeLocalExpenses(items) {
   localStorage.setItem(LOCAL_KEY, JSON.stringify(items));
-}
-
-async function loadDemoExpenses() {
-  const normalized = demoExpenses.map(normalizeEntry);
-  for (const item of normalized) await saveExpense(item);
-  return normalized;
 }
 
 function sortExpenses(items) {
@@ -540,7 +533,7 @@ $('expenseForm').onsubmit = async event => {
 setupVoiceInput();
 getExpenses().then(async data => {
   const localExpenses = data.length ? data : sortExpenses(readLocalExpenses());
-  expenses = localExpenses.length ? localExpenses : await loadDemoExpenses();
+  expenses = localExpenses;
   render();
 }).catch(() => {
   expenses = sortExpenses(readLocalExpenses());
