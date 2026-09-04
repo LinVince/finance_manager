@@ -202,10 +202,12 @@ function render() {
   const totalIncome = incomeEntries.reduce((sum, item) => sum + item.amount, 0);
   const totalInvestments = investmentEntries.reduce((sum, item) => sum + item.amount, 0);
   const netBalance = totalIncome - totalExpenses;
+  const cashLeft = netBalance - totalInvestments;
 
   $('monthName').textContent = visibleMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   $('monthCount').textContent = `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}`;
   $('totalSpent').textContent = currency(netBalance);
+  $('cashLeft').textContent = currency(cashLeft);
   $('categoryCount').textContent = new Set(expenseEntries.map(item => item.category)).size;
 
   const priorMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);

@@ -21,6 +21,10 @@ h2 { font-size:18px; font-weight:700; }
 .text-button { font-size:31px; color:#a8aaa2; padding:0 8px; line-height:1; }
 .summary-panel { display:flex; align-items:center; justify-content:space-between; min-height:180px; padding:28px 30px; background:var(--ink); color:#fbf6ed; border-radius:4px; box-shadow:0 12px 25px rgba(35,38,32,.08); }
 .summary-copy { display:flex; flex-direction:column; gap:8px; }
+.summary-value-block { display:flex; flex-direction:column; gap:8px; }
+.summary-value-block-subtle { margin-top:4px; }
+.summary-value-block-subtle .muted-label { color:#d5dccd; }
+.summary-value-block-subtle strong { font:700 clamp(20px, 5vw, 32px) 'Playfair Display', serif; line-height:1; }
 .summary-copy .muted-label { color:#aeb2a9; }
 .summary-copy strong { font:700 clamp(38px, 11vw, 60px) 'Playfair Display', serif; line-height:1; letter-spacing:0; }
 .comparison { color:#b7c9ab; font-size:12px; }
