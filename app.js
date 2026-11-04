@@ -210,6 +210,8 @@ function render() {
   $('totalSpent').textContent = currency(netBalance);
   $('cashLeft').textContent = currency(cashLeft);
   $('categoryCount').textContent = new Set(expenseEntries.map(item => item.category)).size;
+  $('incomeTotal').textContent = currency(totalIncome);
+  $('investmentTotal').textContent = currency(totalInvestments);
 
   const priorMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
   const priorMonthEntries = expenses.map(normalizeEntry).filter(item => item.date.startsWith(monthKey(priorMonth)));
