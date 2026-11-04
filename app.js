@@ -10,10 +10,11 @@ const categories = {
   Health: { color: '#c78686', icon: '+', terms: 'doctor dentist pharmacy medicine gym health therapy' },
   Fun: { color: '#9c86a4', icon: '✦', terms: 'movie cinema concert game hobby travel vacation book music' },
   Subscriptions: { color: '#8f9c70', icon: '∞', terms: 'netflix spotify subscription adobe membership apple cloud' },
+  Offering: { color: '#b48766', icon: '♡', terms: 'offering tithe donation church' },
   Other: { color: '#9c9b91', icon: '•', terms: '' }
 };
 
-let expenses = [], visibleMonth = new Date(), showAllCategories = false, editingExpenseId = null, activeView = 'month';
+let expenses = [], visibleMonth = new Date(), showAllCategories = false, editingExpenseId = null, activeView = 'month', categoryFilter = 'all';
 const $ = id => document.getElementById(id);
 const LOCAL_KEY = 'spendwell-expenses';
 const currency = value => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
@@ -231,22 +232,33 @@ function render() {
   const sorted = Object.entries(grouped).sort((a, b) => b[1] - a[1]);
   const displayedCategories = showAllCategories ? sorted : sorted.slice(0, 4);
   const chartTotal = sorted.reduce((sum, [, amount]) => sum + amount, 0);
+  const filterCategories = [...new Set([
+    ...Object.keys(categories).filter(category => category !== 'Income' && category !== 'Investment'),
+    ...expenses.map(normalizeEntry).filter(item => item.type === 'expense').map(item => item.category)
+  ])].sort((a, b) => a.localeCompare(b));
+  if (!filterCategories.includes(categoryFilter) && categoryFilter !== 'all') categoryFilter = 'all';
+  $('categoryFilter').innerHTML = `<option value="all">All categories</option>${filterCategories.map(category => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`).join('')}`;
+  $('categoryFilter').value = categoryFilter;
+  $('activityTitle').textContent = categoryFilter === 'all' ? 'Recent activity' : `${categoryFilter} expenses`;
 
   $('categoryList').innerHTML = sorted.length
     ? displayedCategories.map(([category, amount]) => `
-      <article class="category-item">
+      <button class="category-item" type="button" data-category="${escapeHtml(category)}" aria-label="Show ${escapeHtml(category)} expenses totaling ${currency(amount)}">
         <div class="category-meta">
-          <span class="category-dot" style="background:${categories[category].color}"></span>
-          <span class="category-name">${category}</span>
+          <span class="category-dot" style="background:${(categories[category] || categories.Other).color}"></span>
+          <span class="category-name">${escapeHtml(category)}</span>
         </div>
         <div class="category-amount">${currency(amount)}</div>
-        <div class="category-bar"><span style="width:${chartTotal ? (amount / chartTotal) * 100 : 0}%;background:${categories[category].color}"></span></div>
-      </article>
+        <div class="category-bar"><span style="width:${chartTotal ? (amount / chartTotal) * 100 : 0}%;background:${(categories[category] || categories.Other).color}"></span></div>
+      </button>
     `).join('')
     : '<div class="empty-state"><strong>No spending yet</strong>Add your first expense to see your month take shape.</div>';
 
-  $('transactionList').innerHTML = entries.length
-    ? entries.map(item => {
+  const visibleEntries = categoryFilter === 'all'
+    ? entries
+    : expenseEntries.filter(item => item.category === categoryFilter);
+  $('transactionList').innerHTML = visibleEntries.length
+    ? visibleEntries.map(item => {
         const icon = categories[item.category] || categories.Other;
         const amountText = item.type === 'expense' ? `-${currency(item.amount)}` : `+${currency(item.amount)}`;
         const className = item.type === 'expense' ? 'negative' : item.type === 'investment' ? 'investment' : 'positive';
@@ -256,7 +268,7 @@ function render() {
             <div class="transaction-icon" style="background:${icon.color}22">${icon.icon}</div>
             <div class="transaction-info">
               <div class="transaction-name">${escapeHtml(item.name)}</div>
-              <div class="transaction-detail">${item.category} · ${parseDate(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}${item.note ? ` · ${escapeHtml(item.note)}` : ''}</div>
+              <div class="transaction-detail">${escapeHtml(item.category)} · ${parseDate(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}${item.note ? ` · ${escapeHtml(item.note)}` : ''}</div>
             </div>
             <div class="transaction-amount ${className}" style="color:${color}">${amountText}</div>
             <button class="edit-button" data-id="${escapeHtml(item.id)}" title="Edit ${escapeHtml(item.name)}" aria-label="Edit ${escapeHtml(item.name)}">Edit</button>
@@ -264,13 +276,22 @@ function render() {
           </div>
         `;
       }).join('')
-    : '<div class="empty-state"><strong>Your activity is quiet</strong>Your saved entries will show up here.</div>';
+    : categoryFilter === 'all'
+      ? '<div class="empty-state"><strong>Your activity is quiet</strong>Your saved entries will show up here.</div>'
+      : `<div class="empty-state"><strong>No ${escapeHtml(categoryFilter)} expenses this month</strong>Choose another category or month to see expenses.</div>`;
 
   document.querySelectorAll('.edit-button').forEach(button => { button.onclick = () => editExpense(button.dataset.id); });
   document.querySelectorAll('.delete-button').forEach(button => { button.onclick = () => removeExpense(button.dataset.id); });
+  document.querySelectorAll('.category-item').forEach(button => {
+    button.onclick = () => {
+      categoryFilter = button.dataset.category;
+      render();
+      $('transactionsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+  });
 
   $('donut').style.background = sorted.length
-    ? `conic-gradient(${sorted.map(([category, amount], i) => `${categories[category].color} ${sorted.slice(0, i).reduce((sum, part) => sum + part[1], 0) / chartTotal * 100}% ${sorted.slice(0, i + 1).reduce((sum, part) => sum + part[1], 0) / chartTotal * 100}%`).join(',')})`
+    ? `conic-gradient(${sorted.map(([category, amount], i) => `${(categories[category] || categories.Other).color} ${sorted.slice(0, i).reduce((sum, part) => sum + part[1], 0) / chartTotal * 100}% ${sorted.slice(0, i + 1).reduce((sum, part) => sum + part[1], 0) / chartTotal * 100}%`).join(',')})`
     : '#d9d4ca';
 }
 
@@ -429,6 +450,10 @@ $('addExpense').onclick = () => {
 
 $('monthViewButton').onclick = () => { activeView = 'month'; render(); };
 $('overviewViewButton').onclick = () => { activeView = 'overview'; render(); };
+$('categoryFilter').onchange = event => {
+  categoryFilter = event.target.value;
+  render();
+};
 
 $('closeExpense').onclick = () => $('expenseDialog').close();
 $('previousMonth').onclick = () => { visibleMonth.setMonth(visibleMonth.getMonth() - 1); render(); };

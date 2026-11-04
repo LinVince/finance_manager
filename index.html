@@ -54,8 +54,8 @@
       <div class="category-list" id="categoryList"></div>
     </section>
 
-    <section class="section-block transactions-section">
-      <div class="section-heading"><h2>Recent activity</h2><button class="quiet-button" id="clearAll">Clear all</button></div>
+    <section class="section-block transactions-section" id="transactionsSection">
+      <div class="section-heading"><h2 id="activityTitle">Recent activity</h2><div class="activity-actions"><select id="categoryFilter" aria-label="Filter entries by expense category"><option value="all">All categories</option></select><button class="quiet-button" id="clearAll">Clear all</button></div></div>
       <div class="transaction-list" id="transactionList"></div>
     </section>
 
@@ -85,7 +85,7 @@
       </div>
       <div class="field-row">
         <label>Date<input id="expenseDate" name="date" type="date" required></label>
-        <label>Category <span class="optional">optional</span><select id="expenseCategory" name="category"><option value="auto">Auto-detect</option><option>Income</option><option>Investment</option><option>Food & Dining</option><option>Transport</option><option>Home</option><option>Shopping</option><option>Health</option><option>Fun</option><option>Subscriptions</option><option>Other</option></select></label>
+        <label>Category <span class="optional">optional</span><select id="expenseCategory" name="category"><option value="auto">Auto-detect</option><option>Income</option><option>Investment</option><option>Food & Dining</option><option>Transport</option><option>Home</option><option>Shopping</option><option>Health</option><option>Fun</option><option>Subscriptions</option><option>Offering</option><option>Other</option></select></label>
       </div>
       <label>Note <span class="optional">optional</span><textarea id="expenseNote" name="note" rows="2" placeholder="Add a little context"></textarea></label>
       <button class="submit-button" value="default">Save entry <span>↗</span></button>
